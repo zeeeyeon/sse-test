@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Spring Boot SSE Example</title>
+</head>
+<body>
+<h1>Server-Sent Events</h1>
+<div id = "events"></div>
+
+<script>
+  const eventSource = new EventSource("/emitter");
+
+  eventSource.onmessage = (event) => {
+    const div = document.createElement("div");
+
+    // 문자열 데이터 전송
+    // div.textContent = `Event received: ${event.data}`;
+
+
+    // JSON 데이터 전송
+    const eventData = JSON.parse(event.data);
+    div.textContent = `Message: ${eventData.message}, TimeStamp:${new Date(eventData.timestamp)}`;
+
+    document.getElementById("events").appendChild(div);
+
+  }
+
+  eventSource.onerror = (error) => {
+    console.error("error", error);
+    eventSource.close();
+  }
+</script>
+</body>
+</html>
