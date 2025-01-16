@@ -1,0 +1,44 @@
+services:
+  app:
+    build: .
+    container_name: spring_app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - redis
+      - mysql
+    networks:
+      - app_network
+
+  redis:
+    image: redis:latest
+    container_name: redis_container
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - app_network
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_container
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: notification
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app_network
+
+volumes:
+  redis_data:
+    driver: local
+  mysql_data:
+    driver: local
+
+networks:
+  app_network:
+    driver: bridge
