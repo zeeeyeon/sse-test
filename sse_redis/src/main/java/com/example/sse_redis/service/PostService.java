@@ -10,8 +10,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 public class PostService {
@@ -21,28 +19,33 @@ public class PostService {
 
     @Transactional
     public PostResponseDto createPost(Long userId, PostRequestDto requestDto) {
-        User author = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        try {
+            User author = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Post post = Post.builder()
-                .author(author)
-                .title(requestDto.getTitle())
-                .content(requestDto.getContent())
-                .build();
+            Post post = Post.builder()
+                    .author(author)
+                    .title(requestDto.getTitle())
+                    .content(requestDto.getContent())
+                    .build();
 
-        Post savedPost = postRepository.save(post);
+            Post savedPost = postRepository.save(post);
 
-        // 모든 유저에게 알림 발송
-        List<User> allUsers = userRepository.findAll();
-        String message = String.format("%s님이 새 글을 작성했습니다: %s",
-                post.getTitle());
+            String message = String.format("%s님이 새 글을 작성했습니다: %s",
+                    author.getUsername(),
+                    post.getTitle());
 
-        for (User user : allUsers) {
-            if (!user.getId().equals(userId)) {
-                notificationService.notify(user.getId(), message);
+            try {
+                userRepository.findByIdNot(userId)
+                        .forEach(user ->
+                                notificationService.notify(user.getId(), message)
+                        );
+            } catch (Exception e) {
             }
-        }
 
-        return new PostResponseDto(savedPost);
+            return new PostResponseDto(savedPost);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create post", e);
+        }
     }
 }
